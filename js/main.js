@@ -50,14 +50,124 @@ let listaPlatillos = [
     },
 ];
 
-/**REQUERIDA
- * 1. mostrar estos platillos de forma identica a como lo hace preview
- *
- * //ESTO ES OPCIONAL, aqui tendrías que investigar
- * 2. OPCIONAL (cuando de click en el boton agregar hacer que eso se sume al carrito)
- * 	-tips getElementsByClassName, y pueden agregar attributos adicionales
- * 3. OPCIONAL (mostrar el resumen del carrito en la parte izquierda)
- * 4. OPCIONAL (guardar el resumen en el LocalStorage)
+/**
+ * 1. vamos a mostrar a partir de esta data (listaPlatillos) los platillos en el DOM
+ * 2. vamos a implementar que se puedan agregar platillos a un carrito, indicando la cantidad de c/producto
+ * 3. vamos a mostrar el resumen del carrito
+ * 4. vamos a mostrar el total del carrito a pagar
  */
 
-//lo ponen el discord
+let mainContenido = document.getElementById("contenido");
+
+console.log("MAIN", mainContenido);
+
+listaPlatillos.forEach((plato) => {
+    let platilloDom = document.createElement("div");
+
+    platilloDom.classList.add("tarjeta");
+    platilloDom.innerHTML = `<div class="imagen">
+		<img src="${plato.imagen}" alt="${plato.nombre}">
+	</div>
+	<div class="texto">
+		<h4>${plato.nombre}</h4>
+		<p>${plato.descripcion}</p>
+		<div class="precio">
+			<span>S/ ${plato.precio}</span>
+			<button 
+				class="btn-agregar" 
+				data-id="${plato.id}"
+			>
+				Agregar
+		  	</button>
+		</div>
+	</div>
+	`;
+
+    mainContenido.appendChild(platilloDom);
+});
+
+// getElementsByClassName me permite obtener una lista de elementos a partir de una clase de CSS
+let btnsAgregar = document.getElementsByClassName("btn-agregar");
+
+let arrBtnsAgregar = Array.from(btnsAgregar); //forEach, map, find
+
+let carrito = []; //los platillos agregados con su respectiva cantidad
+
+arrBtnsAgregar.forEach((botonAgregar) => {
+    botonAgregar.addEventListener("click", (evento) => {
+        //getAttribute(atributo) , permite obtener el valor de un atributo
+        let btnId = botonAgregar.getAttribute("data-id");
+        // console.log(typeof btnId);
+        // alert(`Has dado click al botón!!!! con id: ${btnId}`);
+        // console.log(evento.target.getAttribute("data-id")); //hace referencia al propio objeto desde donde recibimos el click
+        let platoIdentificado = buscarPlatillo(btnId);
+        anadirACarrito(platoIdentificado); //Agregue un plato y actualice el carrito
+        dibujarCarrito(carrito); //ya esta actualizado
+    });
+});
+
+// HOISTING, las referencias de variables y funciones son ELEVADAS al inicio del script
+const buscarPlatillo = (id) => {
+    let idNumber = parseInt(id);
+    // console.log(typeof idNumber, idNumber);
+    let platilloEncontrado = listaPlatillos.find((plato) => {
+        return plato.id === idNumber;
+    });
+
+    return platilloEncontrado;
+};
+
+const anadirACarrito = (nuevoPlatillo) => {
+    if (nuevoPlatillo.stock === 0) {
+        alert("Ya no hay stock!");
+        return; //corta la ejecución del código
+    }
+
+    let existe = carrito.findIndex((plato) => {
+        return plato.id === nuevoPlatillo.id;
+    });
+    console.log(existe);
+    if (existe === -1) {
+        //no existe en el carrito aún
+        nuevoPlatillo.cantidad = 1;
+        carrito.push(nuevoPlatillo);
+    } else {
+        //en caso ya exista el plato dentro del carrito, incremento su propiedad cantidad en 1
+        // carrito[existe].cantidad = carrito[existe].cantidad + 1
+        carrito[existe].cantidad++;
+    }
+
+    let indiceLista = listaPlatillos.findIndex((items) => items.id === nuevoPlatillo.id);
+    listaPlatillos[indiceLista].stock--;
+};
+
+let tbodyCarrito = document.getElementById("tbody-carrito");
+let tbodyResumen = document.getElementById("tbody-resumen");
+
+const dibujarCarrito = (carritoActualizado) => {
+    let trCarrito = "";
+
+    carritoActualizado.forEach((item) => {
+        trCarrito =
+            trCarrito +
+            `<tr>
+			<td>${item.nombre}</td>
+			<td>${item.cantidad}</td>
+			<td>${item.precio}</td>
+			<td>${item.precio * item.cantidad}</td>
+		</tr>`;
+    });
+
+    tbodyCarrito.innerHTML = trCarrito;
+
+    let total = 0;
+
+    total = carritoActualizado.reduce((acumulador, plato) => {
+        return acumulador + plato.precio * plato.cantidad;
+    }, 0);
+
+    tbodyResumen.innerHTML = `<tr>
+								<td>TOTAL</td>
+								<td>${total}</td>
+							</tr>`;
+};
